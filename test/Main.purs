@@ -1,6 +1,26 @@
 module Test.Main where
 
-import Control.Monad.Eff.Console
+import Main (GameBoard(Rectangle), isComplete)
+import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Console (CONSOLE, print)
+import Prelude (Unit, ($))
 
+board :: GameBoard
+board =
+  Rectangle 3 3
+    [ GameTile (Goal Green) (Jelly Green Up)
+    , GameTile Blank Empty
+    , GameTile Blank Empty
+    , GameTile Blank Empty
+    , GameTile Blank (Jelly Blue Down)
+    , GameTile Blank Empty
+    , GameTile Blank Empty
+    , GameTile Blank Empty
+    , GameTile Blank Empty
+    ]
+
+
+main :: forall eff. Eff ( console :: CONSOLE | eff ) Unit
 main = do
-  log "You should add some tests."
+  --print $ numColors board
+  print $ isComplete board
