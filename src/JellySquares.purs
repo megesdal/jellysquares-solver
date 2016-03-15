@@ -1,10 +1,14 @@
 module JellySquares
-  ( GameBoard(..)
+  ( GameBoard
+  , Rectangle
+  , Positioned
   , GameTile(..)
   , GameTileType(..)
   , Direction(..)
   , Color(..)
   , Jelly(..)
+  , create
+  , createFrom
   , move
   , isComplete
   ) where
@@ -16,17 +20,27 @@ import Prelude
   , (+)
   , (-)
   , (*)
+  , (/)
   , mod
   , (==)
+  , (<)
+  , not
+  , (&&)
   , (>>=)
+  , ($)
   , (<$>)
   , (++)
   , show
   )
 import Data.Maybe (Maybe(Nothing, Just))
-import Data.Array ((!!), updateAt)
+import Data.Array ((!!), updateAt, zipWith, length, snoc)
+import Data.Foldable (class Foldable, and, foldl, foldr)
+import Data.Tuple
+import Data.List (List(Nil))
+import Data.Monoid (mempty)
 
 
+-- Color --
 data Color
   = Red
   | Purple
@@ -49,6 +63,7 @@ instance eqColor :: Eq Color where
   eq _ _ = false
 
 
+-- Direction --
 data Direction
   = Up
   | Down
@@ -63,6 +78,15 @@ instance showDirection :: Show Direction where
   show Right = "R"
 
 
+instance eqDirection :: Eq Direction where
+  eq Up Up = true
+  eq Down Down = true
+  eq Left Left = true
+  eq Right Right = true
+  eq _ _ = false
+
+
+-- GameTileType --
 data GameTileType
   = Blank
   | Arrow Direction
@@ -75,106 +99,205 @@ instance showGameTileType :: Show GameTileType where
   show (Goal color) = show color
 
 
-data Jelly = Jelly Color Direction | Empty
+instance eqGameTileType :: Eq GameTileType where
+  eq Blank Blank = true
+  eq (Arrow direction1) (Arrow direction2) = direction1 == direction2
+  eq (Goal color1) (Goal color2) = color1 == color2
+  eq _ _ = false
+
+
+-- Jelly --
+data Jelly = Jelly Color Direction
+
+
+colorOf :: Jelly -> Color
+colorOf (Jelly color _) = color
+
+
+directionOf :: Jelly -> Direction
+directionOf (Jelly _ direction) = direction
 
 
 instance showJelly :: Show Jelly where
   show (Jelly color direction) = (show color) ++ (show direction)
-  show Empty = "--"
 
 
-data GameTile = GameTile GameTileType Jelly
+instance eqJelly :: Eq Jelly where
+  eq (Jelly color1 direction1) (Jelly color2 direction2) =
+    color1 == color2 && direction1 == direction2
+
+
+-- GameTile
+data GameTile = Occupied GameTileType Jelly | Empty GameTileType
+
+
+typeOf :: GameTile -> GameTileType
+typeOf (Occupied gameTileType _) = gameTileType
+typeOf (Empty gameTileType) = gameTileType
 
 
 instance showGameTile :: Show GameTile where
-  show (GameTile gameTileType jelly) =
+  show (Occupied gameTileType jelly) =
     (show gameTileType) ++ "|" ++ (show jelly)
+  show (Empty gameTileType) =
+    (show gameTileType) ++ "|--"
 
 
--- data plus nrows and ncols... only ncols needed
-data GameBoard = Rectangle Int Int (Array GameTile)
+instance eqGameTile :: Eq GameTile where
+  eq (Occupied gameTileType1 jelly1) (Occupied gameTileType2 jelly2) =
+    gameTileType1 == gameTileType2 && jelly1 == jelly2
+  eq (Empty gameTileType1) (Empty gameTileType2) =
+    gameTileType1 == gameTileType2
+  eq _ _ =
+    false
 
 
-instance showGameBoard :: Show GameBoard where
-  show (Rectangle nrows ncols tiles) =
+-- Positioned a
+data Positioned a = Positioned Int Int a
+
+
+unwrap :: forall a. Positioned a -> a
+unwrap (Positioned _ _ x) = x
+
+
+instance eqPositioned :: (Eq a) => Eq (Positioned a) where
+  eq (Positioned row1 col1 x1) (Positioned row2 col2 x2) =
+    row1 == row2 && col1 == col2 && x1 == x2
+
+
+-- Rectangle
+data Rectangle a = Rectangle Int (Array a)
+
+
+create :: forall a. Int -> Int -> a -> Rectangle (Positioned a)
+create nrows ncols value =
+  let
+    recCreate :: Array (Positioned a) -> Int -> Array (Positioned a)
+    recCreate positionedValues i =
+      if i < nrows * ncols then
+        recCreate
+          (snoc positionedValues (Positioned (i / ncols) (mod i ncols) value))
+          (i + 1)
+      else
+        positionedValues
+  in
+    Rectangle ncols $ recCreate [] 0
+
+
+createFrom :: forall a. Int -> Array a -> Maybe (Rectangle (Positioned a))
+createFrom ncols values =
+  if not $ (mod (length values) ncols) == 0 then
+    Nothing
+  else
     let
-      recPrintTiles :: String -> Int -> String
-      recPrintTiles tilesStr tileIdx =
-        case tiles !! tileIdx of
-          Just tile ->
-            recPrintTiles
-              (tilesStr ++ (if tilesStr == "" then "" else if mod tileIdx ncols == 0 then "\n" else "  ") ++ (show tile))
-              (tileIdx + 1)
+      recCreate :: Array (Positioned a) -> Int -> Array (Positioned a)
+      recCreate positionedValues i =
+        case values !! i of
+          Just value ->
+            recCreate
+              (snoc positionedValues (Positioned (i / ncols) (mod i ncols) value))
+              (i + 1)
           Nothing ->
-            tilesStr
+            positionedValues
     in
-      recPrintTiles "" 0
+      Just (Rectangle ncols (recCreate [] 0))
 
 
-tileAt :: Int -> Int -> GameBoard -> Maybe GameTile
-tileAt rowIdx colIdx (Rectangle nrows ncols tiles) =
-  tiles !! (rowIdx * ncols + colIdx)  -- >>= (flip (!!) colIdx)
+updateTileAt :: forall a. Int -> Int -> a -> Rectangle (Positioned a) -> Maybe (Rectangle (Positioned a))
+updateTileAt row col tile (Rectangle ncols tiles) =
+  Rectangle ncols <$> updateAt (row * ncols + col) (Positioned row col tile) tiles
+
+
+tileAt :: forall a. Int -> Int -> Rectangle (Positioned a) -> Maybe a
+tileAt rowIdx colIdx (Rectangle ncols tiles) =
+  case tiles !! (rowIdx * ncols + colIdx) of
+    Just (Positioned _ _ tile) -> Just tile
+    Nothing -> Nothing
+
+
+instance showRectangle :: (Show a) => Show (Rectangle (Positioned a)) where
+  show (Rectangle ncols values) =
+    let
+      append acc (Positioned _ col value) =
+        acc ++
+        (if acc == "" then "" else if col == 0 then "\n" else "  ") ++
+        (show value)
+    in
+      foldl append "" values
+
+
+instance eqRectangle :: (Eq a) => Eq (Rectangle a) where
+  eq (Rectangle ncols1 tiles1) (Rectangle ncols2 tiles2) =
+    (and $ zipWith (\a b -> a == b) tiles1 tiles2)
+      && ncols1 == ncols2
+
+
+foldrRectangle :: forall a b. (a -> b -> b) -> b -> Rectangle a -> b
+foldrRectangle fn start (Rectangle ncols tiles) =
+    foldr fn start tiles
+
+
+foldlRectangle :: forall a b. (b -> a -> b) -> b -> Rectangle a -> b
+foldlRectangle fn start (Rectangle ncols tiles) =
+    foldl fn start tiles
+
+
+instance foldableRectangle :: Foldable Rectangle where
+  foldr = foldrRectangle
+  foldl = foldlRectangle
+  foldMap f xs = foldr (\x acc -> f x ++ acc) mempty xs
+
+
+-- GameBoard --
+type GameBoard = Rectangle (Positioned GameTile)
 
 
 placeAt :: Int -> Int -> Jelly -> GameBoard -> Maybe GameBoard
-placeAt rowIdx colIdx jelly gameBoard =
+placeAt row col jelly gameBoard =
   let
-    replaceTile :: GameBoard -> GameTile -> Maybe GameBoard
-    replaceTile (Rectangle nrows ncols tiles) (GameTile existingType _) =
+    placeWithType existingType =
       let
         nextJelly =
-          case jelly of
-            Jelly color _ ->
-              case existingType of
-                Arrow direction -> Jelly color direction
-                _ -> jelly
-            Empty -> Empty
-
-        maybeNextTiles =
-          updateAt (rowIdx * ncols + colIdx) (GameTile existingType nextJelly) tiles
+          case existingType of
+            Arrow direction -> Jelly (colorOf jelly) direction
+            _ -> jelly
       in
-        Rectangle nrows ncols <$> maybeNextTiles
+        updateTileAt row col (Occupied existingType nextJelly) gameBoard
   in
-    tileAt rowIdx colIdx gameBoard >>=
-      replaceTile gameBoard
+    typeOf <$> (tileAt row col gameBoard)
+      >>= placeWithType
 
 
-reduce :: forall a. GameBoard -> a -> (a -> GameTile -> a) -> a
-reduce (Rectangle nrows ncols tiles) start fn =
+clearAt :: Int -> Int -> GameBoard -> Maybe GameBoard
+clearAt row col gameBoard =
   let
-    recReduce :: a -> Int -> a
-    recReduce last tileIdx =
-      case tiles !! tileIdx of
-        Just tile ->
-          recReduce (fn last tile) (tileIdx + 1)
-        Nothing ->
-          last
+    placeWithType existingType =
+      updateTileAt row col (Empty existingType) gameBoard
   in
-    recReduce start 0
+    typeOf <$> (tileAt row col gameBoard)
+      >>= placeWithType
 
 
 numColors :: GameBoard -> Int
 numColors gameBoard =
   let
-    countJelly :: Int -> GameTile -> Int
-    countJelly count tile =
+    countJelly count (Positioned _ _ tile) =
       case tile of
-        GameTile _ (Jelly _ _) ->
+        Occupied _ _ ->
           count + 1
 
-        _ ->
+        Empty _ ->
           count
   in
-    reduce gameBoard 0 countJelly
+    foldl countJelly 0 gameBoard
 
 
 isComplete :: GameBoard -> Boolean
 isComplete gameBoard =
   let
-    countJellyOnGoal :: Int -> GameTile -> Int
-    countJellyOnGoal count tile =
+    countJellyOnGoal count (Positioned _ _ tile) =
       case tile of
-        GameTile (Goal c1) (Jelly c2 _) ->
+        Occupied (Goal c1) (Jelly c2 _) ->
           if c1 == c2 then
             count + 1
           else
@@ -183,11 +306,11 @@ isComplete gameBoard =
         _ ->
           count
   in
-    (reduce gameBoard 0 countJellyOnGoal) == (numColors gameBoard)
+    (foldl countJellyOnGoal 0 gameBoard) == (numColors gameBoard)
 
 
-recMove ::  Direction -> Int -> Int  -> GameBoard -> Maybe GameBoard
-recMove direction fromRow fromCol gameBoard =
+recMove ::  Direction -> Int -> Int  -> Jelly -> GameBoard -> Maybe GameBoard
+recMove direction fromRow fromCol jelly gameBoard =
   let
     toRow =
       case direction of
@@ -207,23 +330,47 @@ recMove direction fromRow fromCol gameBoard =
         Nothing
 
       -- moving to an empty square is okay
-      Just (GameTile _ Empty) ->
-        tileAt fromRow fromCol gameBoard >>=
-          \(GameTile _ jelly) -> placeAt toRow toCol jelly gameBoard >>=
-            placeAt fromRow fromCol Empty
+      Just (Empty _) ->
+        placeAt toRow toCol jelly gameBoard
+          >>= clearAt fromRow fromCol
 
       -- gotta move the existing tile first
-      Just (GameTile _ (Jelly _ _)) ->
-        recMove direction toRow toCol gameBoard >>=
-          recMove direction fromRow fromCol
+      Just (Occupied _ existingJelly) ->
+        recMove direction toRow toCol existingJelly gameBoard
+          >>= recMove direction fromRow fromCol jelly
 
 
 move ::  Int -> Int -> GameBoard -> Maybe GameBoard
-move rowIdx colIdx gameBoard =
-  case tileAt rowIdx colIdx gameBoard of
-    Just (GameTile _ (Jelly _ direction)) ->
-      recMove direction rowIdx colIdx gameBoard
+move row col gameBoard =
+  case tileAt row col gameBoard of
+    Just (Occupied _ jelly) ->
+      recMove (directionOf jelly) row col jelly gameBoard
 
     -- off the board or tile is empty... no can
     _ ->
       Nothing
+
+
+canMove :: Int -> Int -> GameBoard -> Boolean
+canMove row col gameBoard =
+  case move row col gameBoard of
+    Just _ -> true
+    Nothing -> false
+
+
+hasMoves :: GameBoard -> Boolean
+hasMoves gameBoard =
+  let
+    checkCanMove otherCanMove (Positioned row col _) =
+      if otherCanMove then
+        true
+      else
+        canMove row col gameBoard
+  in
+    foldl checkCanMove false gameBoard
+
+
+possibleMoves :: GameBoard -> List (Tuple Int Int)
+possibleMoves gameBoard =
+  -- TODO:
+  Nil

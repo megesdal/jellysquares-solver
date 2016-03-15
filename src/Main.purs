@@ -14,17 +14,22 @@ import JellySquares
 
 board :: GameBoard
 board =
-  Rectangle 3 3
-    [ GameTile (Goal Green) (Jelly Green Up)
-    , GameTile Blank Empty
-    , GameTile (Goal Red) (Jelly Red Down)
-    , GameTile Blank Empty
-    , GameTile (Goal Blue) (Jelly Blue Down)
-    , GameTile Blank Empty
-    , GameTile (Goal Purple) Empty
-    , GameTile Blank (Jelly Purple Up)
-    , GameTile Blank Empty
-    ]
+  let
+    tiles =
+      [ Occupied (Goal Green) (Jelly Green Up)
+      , Empty Blank
+      , Occupied (Goal Red) (Jelly Red Down)
+      , Empty Blank
+      , Occupied (Goal Blue) (Jelly Blue Down)
+      , Empty Blank
+      , Empty (Goal Purple)
+      , Occupied Blank (Jelly Purple Up)
+      , Empty Blank
+      ]
+  in
+    case createFrom 3 tiles of
+      Just x -> x
+      Nothing -> create 3 3 (Empty Blank)
 
 
 main :: forall eff. Eff ( console :: CONSOLE | eff ) Unit
