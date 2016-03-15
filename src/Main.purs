@@ -44,3 +44,4 @@ main =
     print $ isComplete board
     print nextBoard
     print $ isComplete nextBoard
+    print $ possibleMoves board

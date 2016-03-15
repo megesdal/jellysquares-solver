@@ -11,6 +11,7 @@ module JellySquares
   , createFrom
   , move
   , isComplete
+  , possibleMoves
   ) where
 
 
@@ -24,6 +25,7 @@ import Prelude
   , mod
   , (==)
   , (<)
+  , (>)
   , not
   , (&&)
   , (>>=)
@@ -36,7 +38,7 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.Array ((!!), updateAt, zipWith, length, snoc)
 import Data.Foldable (class Foldable, and, foldl, foldr)
 import Data.Tuple
-import Data.List (List(Nil))
+import Data.List (List(Nil), (:))
 import Data.Monoid (mempty)
 
 
@@ -371,6 +373,23 @@ hasMoves gameBoard =
 
 
 possibleMoves :: GameBoard -> List (Tuple Int Int)
-possibleMoves gameBoard =
-  -- TODO:
-  Nil
+possibleMoves (Rectangle ncols tiles) =
+  let
+    nrows = (length tiles) / ncols
+
+    isMovePossible row col direction =
+      case direction of
+        Up -> row > 0
+        Right -> col < ncols - 1
+        Down -> row < nrows - 1
+        Left -> col > 0
+
+    addPossibleMove (Positioned row col (Occupied _ (Jelly _ direction))) moves =
+      if isMovePossible row col direction then
+        Tuple row col : moves
+      else
+        moves
+
+    addPossibleMove _ moves = moves
+  in
+    foldr addPossibleMove Nil tiles
