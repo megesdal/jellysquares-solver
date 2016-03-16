@@ -16,7 +16,10 @@ import Data.List (List(Nil), (:), head, tail)
 import Data.Maybe (Maybe(..))
 import JellySquares
 
-import Debug.Trace (trace, traceShow, spy)
+import Debug.Trace
+  ( trace
+  , traceShow
+  )
 
 
 -- starting board and the move played on it

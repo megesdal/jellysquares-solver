@@ -266,6 +266,69 @@ board11 =
   in
     createFrom 4 tiles (Empty Blank)
 
+board12 :: GameBoard
+board12 =
+  let
+    tiles =
+      [ Empty Blank
+      , Empty (Goal Blue)
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+
+      , Occupied Blank (Jelly Green Right)
+      , Empty Blank
+      , Occupied Blank (Jelly Blue Left)
+      , Empty (Goal Green)
+      , Empty (Goal Red)
+
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      , Occupied Blank (Jelly Red Up)
+      , Empty Blank
+      ]
+  in
+    createFrom 5 tiles (Empty Blank)
+
+
+board13 :: GameBoard
+board13 =
+  let
+    tiles =
+      [ Empty (Goal Green)
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      , Empty (Goal Red)
+
+      , Empty (Goal Blue)
+      , Occupied Blank (Jelly Red Right)
+      , Empty Blank
+      , Occupied Blank (Jelly Blue Left)
+      , Empty Blank
+
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+
+
+      , Empty Blank
+      , Occupied Blank (Jelly Green Up)
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      ]
+  in
+    createFrom 5 tiles (Empty Blank)
 
 board44 :: GameBoard
 board44 =
@@ -307,5 +370,5 @@ board44 =
 
 main :: forall eff. Eff ( console :: CONSOLE | eff ) Unit
 main = do
-  print board11
-  print $ solve board11
+  print board13
+  print $ solve board13

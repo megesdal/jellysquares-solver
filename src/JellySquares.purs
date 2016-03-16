@@ -27,6 +27,7 @@ import Prelude
   , (==)
   , (<)
   , (>)
+  , (>=)
   , (&&)
   , (>>=)
   , bind
@@ -215,9 +216,12 @@ updateTileAt row col tile (Rectangle ncols tiles) =
 
 tileAt :: forall a. Int -> Int -> Rectangle (Positioned a) -> Maybe a
 tileAt rowIdx colIdx (Rectangle ncols tiles) =
-  case tiles !! (rowIdx * ncols + colIdx) of
-    Just (Positioned _ _ tile) -> Just tile
-    Nothing -> Nothing
+  if colIdx >= ncols then
+    Nothing
+  else
+    case tiles !! (rowIdx * ncols + colIdx) of
+      Just (Positioned _ _ tile) -> Just tile
+      Nothing -> Nothing
 
 
 instance showRectangle :: (Show a) => Show (Rectangle (Positioned a)) where
