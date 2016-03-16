@@ -362,6 +362,7 @@ move ::  Int -> Int -> GameBoard -> Maybe GameBoard
 move row col gameBoard =
   case tileAt row col gameBoard of
     Just (Occupied tileType jelly) ->
+      -- I am not sure this is a good idea...
       if isJellyOnGoal tileType jelly then
         Nothing
       else
