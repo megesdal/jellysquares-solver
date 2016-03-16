@@ -12,6 +12,7 @@ module JellySquares
   , move
   , isComplete
   , possibleMoves
+  , jellyAt
   ) where
 
 
@@ -26,9 +27,9 @@ import Prelude
   , (==)
   , (<)
   , (>)
-  , not
   , (&&)
   , (>>=)
+  , bind
   , ($)
   , (<$>)
   , (++)
@@ -186,23 +187,25 @@ create nrows ncols value =
     Rectangle ncols $ recCreate [] 0
 
 
-createFrom :: forall a. Int -> Array a -> Maybe (Rectangle (Positioned a))
-createFrom ncols values =
-  if not $ (mod (length values) ncols) == 0 then
-    Nothing
-  else
-    let
-      recCreate :: Array (Positioned a) -> Int -> Array (Positioned a)
-      recCreate positionedValues i =
-        case values !! i of
-          Just value ->
-            recCreate
-              (snoc positionedValues (Positioned (i / ncols) (mod i ncols) value))
-              (i + 1)
-          Nothing ->
+createFrom :: forall a. Int -> Array a -> a -> Rectangle (Positioned a)
+createFrom ncols values defaultValue =
+  let
+    recCreate :: Array (Positioned a) -> Int -> Array (Positioned a)
+    recCreate positionedValues i =
+      case values !! i of
+        Just value ->
+          recCreate
+            (snoc positionedValues (Positioned (i / ncols) (mod i ncols) value))
+            (i + 1)
+        Nothing ->
+          if mod i ncols == 0 then
             positionedValues
-    in
-      Just (Rectangle ncols (recCreate [] 0))
+          else
+            recCreate
+              (snoc positionedValues (Positioned (i / ncols) (mod i ncols) defaultValue))
+              (i + 1)
+  in
+    Rectangle ncols (recCreate [] 0)
 
 
 updateTileAt :: forall a. Int -> Int -> a -> Rectangle (Positioned a) -> Maybe (Rectangle (Positioned a))
@@ -258,6 +261,14 @@ typeAt :: Int -> Int -> GameBoard -> Maybe GameTileType
 typeAt row col gameBoard = typeOf <$> tileAt row col gameBoard
 
 
+jellyAt :: Int -> Int -> GameBoard -> Maybe Jelly
+jellyAt row col gameBoard = do
+  tile <- tileAt row col gameBoard
+  case tile of
+    Empty _ -> Nothing
+    Occupied _ jelly -> Just jelly
+
+
 placeAt :: Int -> Int -> Jelly -> GameBoard -> Maybe GameBoard
 placeAt row col jelly gameBoard =
   let
@@ -294,6 +305,11 @@ numColors gameBoard =
           count
   in
     foldl countJelly 0 gameBoard
+
+
+isJellyOnGoal :: GameTileType -> Jelly -> Boolean
+isJellyOnGoal (Goal goalColor) (Jelly jellyColor _) = goalColor == jellyColor
+isJellyOnGoal _ _ = false
 
 
 isComplete :: GameBoard -> Boolean
@@ -345,8 +361,11 @@ recMove direction fromRow fromCol jelly gameBoard =
 move ::  Int -> Int -> GameBoard -> Maybe GameBoard
 move row col gameBoard =
   case tileAt row col gameBoard of
-    Just (Occupied _ jelly) ->
-      recMove (directionOf jelly) row col jelly gameBoard
+    Just (Occupied tileType jelly) ->
+      if isJellyOnGoal tileType jelly then
+        Nothing
+      else
+        recMove (directionOf jelly) row col jelly gameBoard
 
     -- off the board or tile is empty... no can
     _ ->
@@ -384,7 +403,8 @@ possibleMoves (Rectangle ncols tiles) =
         Down -> row < nrows - 1
         Left -> col > 0
 
-    addPossibleMove (Positioned row col (Occupied _ (Jelly _ direction))) moves =
+    addPossibleMove (Positioned row col (Occupied tileType (Jelly jellyColor direction))) moves =
+
       if isMovePossible row col direction then
         Tuple row col : moves
       else

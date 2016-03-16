@@ -1,7 +1,16 @@
 module JellySquares.Solver
-  ( solve ) where
+  ( solve
+  , Move
+  ) where
 
-import Prelude ((>>=), ($), (==))
+import Prelude
+  ( (>>=)
+  , ($)
+  , (==)
+  , (++)
+  , class Show
+  , show
+  )
 import Data.Tuple (Tuple(..))
 import Data.List (List(Nil), (:), head, tail)
 import Data.Maybe (Maybe(..))
@@ -11,7 +20,16 @@ import Debug.Trace (trace, traceShow, spy)
 
 
 -- starting board and the move played on it
-type Move = Tuple GameBoard (Tuple Int Int)
+data Move = Move GameBoard Int Int
+
+instance moveShow :: Show Move where
+  show (Move board row col) =
+    case jellyAt row col board of
+      Nothing -> ":("
+      Just tile -> show tile
+
+
+data Solution = Solution (List Move) GameBoard
 
 
 seenBefore :: GameBoard -> List Move -> Boolean
@@ -22,7 +40,7 @@ seenBefore gameBoard moves =
         Nothing ->
           false
 
-        Just (Tuple moveGameBoard _) ->
+        Just (Move moveGameBoard _ _) ->
           if gameBoard == moveGameBoard then
             true
           else
@@ -43,10 +61,10 @@ recSolve currentBoard movesSoFar =
       recTryPossibles movesLeftToTry =
         case head movesLeftToTry of
           Nothing ->
-            Nothing
+            (trace ("dead end:\n" ++ show currentBoard) \_ -> Nothing)
 
           Just (Tuple row col) ->
-            case move (trace "row" \_->(spy row)) (trace "col" \_->(spy col)) currentBoard of
+            case move (trace ("move: row " ++ (show row) ++ " col " ++ (show col)) \_ -> row) col currentBoard of
               Nothing ->
                 (tail movesLeftToTry) >>= recTryPossibles
 
@@ -54,7 +72,7 @@ recSolve currentBoard movesSoFar =
                 if seenBefore nextBoard movesSoFar then
                   (tail movesLeftToTry) >>= recTryPossibles
                 else
-                  case recSolve nextBoard ((Tuple currentBoard (Tuple row col)) : movesSoFar) of
+                  case recSolve nextBoard (Move currentBoard row col : movesSoFar) of
                     Just solution ->
                       Just solution
                     Nothing ->

@@ -8,9 +8,65 @@ import Prelude
   , ($)
   , bind
   )
-import Data.Maybe (Maybe(Nothing, Just))
+
 import JellySquares
 import JellySquares.Solver (solve)
+
+
+board1 :: GameBoard
+board1 =
+  let
+    tiles =
+      [ Empty Blank
+      , Empty Blank
+      , Empty Blank
+
+      , Empty Blank
+      , Empty (Goal Red)
+      , Empty Blank
+
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+
+      , Empty Blank
+      , Occupied Blank (Jelly Red Up)
+      , Empty Blank
+
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      ]
+  in
+    createFrom 3 tiles (Empty Blank)
+
+
+board2 :: GameBoard
+board2 =
+  let
+    tiles =
+      [ Empty Blank
+      , Empty Blank
+      , Empty Blank
+
+      , Empty Blank
+      , Empty Blank
+      , Occupied Blank (Jelly Green Down)
+
+      , Empty (Goal Blue)
+      , Empty Blank
+      , Empty (Goal Green)
+
+      , Occupied Blank (Jelly Blue Up)
+      , Empty Blank
+      , Empty Blank
+
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      ]
+  in
+    createFrom 3 tiles (Empty Blank)
 
 
 board44 :: GameBoard
@@ -48,13 +104,11 @@ board44 =
       , Empty Blank
       ]
   in
-    case createFrom 4 tiles of
-      Just x -> x
-      Nothing -> create 6 4 (Empty Blank)
+    createFrom 4 tiles (Empty Blank)
 
 
 main :: forall eff. Eff ( console :: CONSOLE | eff ) Unit
 main = do
-  print board44
-  print $ possibleMoves board44
-  print $ solve board44
+  print board1
+  print $ possibleMoves board2
+  print $ solve board2
