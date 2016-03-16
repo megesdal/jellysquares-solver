@@ -254,6 +254,10 @@ instance foldableRectangle :: Foldable Rectangle where
 type GameBoard = Rectangle (Positioned GameTile)
 
 
+typeAt :: Int -> Int -> GameBoard -> Maybe GameTileType
+typeAt row col gameBoard = typeOf <$> tileAt row col gameBoard
+
+
 placeAt :: Int -> Int -> Jelly -> GameBoard -> Maybe GameBoard
 placeAt row col jelly gameBoard =
   let
@@ -266,8 +270,7 @@ placeAt row col jelly gameBoard =
       in
         updateTileAt row col (Occupied existingType nextJelly) gameBoard
   in
-    typeOf <$> (tileAt row col gameBoard)
-      >>= placeWithType
+    typeAt row col gameBoard >>= placeWithType
 
 
 clearAt :: Int -> Int -> GameBoard -> Maybe GameBoard
@@ -276,8 +279,7 @@ clearAt row col gameBoard =
     placeWithType existingType =
       updateTileAt row col (Empty existingType) gameBoard
   in
-    typeOf <$> (tileAt row col gameBoard)
-      >>= placeWithType
+    typeAt row col gameBoard >>= placeWithType
 
 
 numColors :: GameBoard -> Int
@@ -297,16 +299,14 @@ numColors gameBoard =
 isComplete :: GameBoard -> Boolean
 isComplete gameBoard =
   let
-    countJellyOnGoal count (Positioned _ _ tile) =
-      case tile of
-        Occupied (Goal c1) (Jelly c2 _) ->
-          if c1 == c2 then
-            count + 1
-          else
-            count
+    countJellyOnGoal count (Positioned _ _ (Occupied (Goal c1) (Jelly c2 _))) =
+      if c1 == c2 then
+        count + 1
+      else
+        count
 
-        _ ->
-          count
+    countJellyOnGoal count _ =
+      count
   in
     (foldl countJellyOnGoal 0 gameBoard) == (numColors gameBoard)
 
@@ -390,6 +390,7 @@ possibleMoves (Rectangle ncols tiles) =
       else
         moves
 
-    addPossibleMove _ moves = moves
+    addPossibleMove _ moves =
+      moves
   in
     foldr addPossibleMove Nil tiles
