@@ -330,6 +330,179 @@ board13 =
   in
     createFrom 5 tiles (Empty Blank)
 
+
+board14 :: GameBoard
+board14 =
+  let
+    tiles =
+      [ Empty Blank
+      , Empty Blank
+      , Empty Blank
+      , Empty (Goal Blue)
+
+      , Empty (Goal Red)
+      , Empty Blank
+      , Occupied Blank (Jelly Green Down)
+      , Empty Blank
+
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      , Occupied Blank (Jelly Red Left)
+
+      , Empty Blank
+      , Empty (Goal Green)
+      , Empty Blank
+      , Occupied Blank (Jelly Blue Up)
+      ]
+  in
+    createFrom 4 tiles (Empty Blank)
+
+
+board15 :: GameBoard
+board15 =
+  let
+    tiles =
+      [ Empty (Goal Red)
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+
+      , Empty Blank
+      , Empty (Goal Blue)
+      , Empty Blank
+      , Empty Blank
+
+      , Empty (Goal Purple)
+      , Empty Blank
+      , Occupied Blank (Jelly Red Left)
+      , Occupied Blank (Jelly Purple Left)
+
+      , Empty Blank
+      , Empty Blank
+      , Occupied Blank (Jelly Blue Up)
+      , Empty Blank
+      ]
+  in
+    createFrom 4 tiles (Empty Blank)
+
+
+board16 :: GameBoard
+board16 =
+  let
+    tiles =
+      [ Empty (Goal Red)
+      , Empty Blank
+      , Occupied Blank (Jelly Blue Down)
+      , Empty Blank
+
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      , Empty (Goal Green)
+
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      , Occupied Blank (Jelly Red Left)
+
+      , Empty Blank
+      , Empty (Goal Blue)
+      , Empty Blank
+      , Occupied Blank (Jelly Green Up)
+      ]
+  in
+    createFrom 4 tiles (Empty Blank)
+
+
+board17 :: GameBoard
+board17 =
+  let
+    tiles =
+      [ Empty Blank
+      , Empty Blank
+      , Occupied Blank (Jelly Blue Down)
+      , Empty Blank
+
+      , Occupied Blank (Jelly Red Right)
+      , Empty (Goal Red)
+      , Empty (Goal Green)
+      , Empty Blank
+
+      , Empty Blank
+      , Empty (Goal Blue)
+      , Empty (Goal Purple)
+      , Occupied Blank (Jelly Purple Left)
+
+      , Empty Blank
+      , Occupied Blank (Jelly Green Up)
+      , Empty Blank
+      , Empty Blank
+      ]
+  in
+    createFrom 4 tiles (Empty Blank)
+
+board18 :: GameBoard
+board18 =
+  let
+    tiles =
+      [ Empty Blank
+      , Occupied Blank (Jelly Green Down)
+      , Empty Blank
+
+      , Occupied Blank (Jelly Purple Right)
+      , Empty (Goal Green)
+      , Empty (Goal Blue)
+
+      , Occupied Blank (Jelly Red Right)
+      , Empty (Goal Red)
+      , Empty (Goal Purple)
+
+      , Empty Blank
+      , Occupied Blank (Jelly Blue Up)
+      , Empty Blank
+      ]
+  in
+    createFrom 3 tiles (Empty Blank)
+
+board19 :: GameBoard
+board19 =
+  let
+    tiles =
+      [ Empty Blank
+      , Empty Blank
+      , Empty (Goal Purple)
+      , Empty Blank
+      , Empty Blank
+
+      , Empty (Goal Blue)
+      , Empty Blank
+      , Occupied Blank (Jelly Red Down)
+      , Empty Blank
+      , Occupied Blank (Jelly Blue Left)
+
+      , Occupied Blank (Jelly Green Right)
+      , Empty Blank
+      , Empty Blank
+      , Empty Blank
+      , Empty (Goal Green)
+
+      , Empty Blank
+      , Empty Blank
+      , Occupied Blank (Jelly Purple Up)
+      , Empty Blank
+      , Empty Blank
+
+      , Empty Blank
+      , Empty Blank
+      , Empty (Goal Red)
+      , Empty Blank
+      , Empty Blank
+      ]
+  in
+    createFrom 5 tiles (Empty Blank)
+
+
 board44 :: GameBoard
 board44 =
   let
@@ -370,5 +543,5 @@ board44 =
 
 main :: forall eff. Eff ( console :: CONSOLE | eff ) Unit
 main = do
-  print board13
-  print $ solve board13
+  print board19
+  print $ solve board19
