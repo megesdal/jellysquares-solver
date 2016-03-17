@@ -19,6 +19,12 @@ import Data.List (List(..), (:), head, tail)
 import Data.Maybe (Maybe(..))
 import Data.Either (Either(..))
 import JellySquares
+  ( GameBoard
+  , jellyAt
+  , possibleMoves
+  , isComplete
+  , move
+  )
 
 import Debug.Trace
   ( trace
@@ -141,10 +147,18 @@ processMoves (Cons currentMove otherMovesToTry) queue =
           processMoves otherMovesToTry (movesToQueue ++ queue)
 
 
-recSolveDepthFirst :: GameBoard -> List Move -> Int -> Maybe (List Move)
+recSolveBreadthFirst :: List Move -> Maybe Solution
+recSolveBreadthFirst moves =
+  case processMoves moves Nil of
+    Left Nil -> Nothing
+    Left queue -> recSolveBreadthFirst queue
+    Right solution -> Just solution
+
+
+recSolveDepthFirst :: GameBoard -> List Move -> Int -> Maybe Solution
 recSolveDepthFirst currentBoard movesSoFar depth =
   if isComplete (trace "===recSolve===" \_->(traceShow currentBoard (\_ -> currentBoard))) then
-    Just movesSoFar
+    Just (Solution movesSoFar)
   else
     let
       recTryPossibles count movesLeftToTry =
@@ -173,22 +187,5 @@ recSolveDepthFirst currentBoard movesSoFar depth =
 
 solve :: GameBoard -> Maybe Solution
 solve gameBoard =
-  let
-    recSolveBreadthFirst moves =
-      case processMoves moves Nil of
-        Left Nil -> Nothing
-        Left queue -> recSolveBreadthFirst queue
-        Right solution -> Just solution
-  in
-    recSolveBreadthFirst $ findMovesOnBoard Nil gameBoard
-    -- TODO: try every possible board until:
-    -- 1. the jellies are in their goals
-    -- 2. no future boards are left
-    -- 3. a previous board has been reached
-    -- recSolveDepthFirst gameBoard Nil 0
-
-
-
-  -- get possible moves
-  -- try each one... and record the new boards
-  -- if not
+  recSolveBreadthFirst $ findMovesOnBoard Nil gameBoard
+  -- recSolveDepthFirst gameBoard Nil 0
