@@ -543,5 +543,60 @@ board44 =
 
 main :: forall eff. Eff ( console :: CONSOLE | eff ) Unit
 main = do
+  print "=== 1 ==="
+  print board1
+  print $ solve board1
+  print "=== 2 ==="
+  print board2
+  print $ solve board2
+  print "=== 3 ==="
+  print board3
+  print $ solve board3
+  print "=== 4 ==="
+  print board4
+  print $ solve board4
+  print "=== 5 ==="
+  print board5
+  print $ solve board5
+  print "=== 6 ==="
+  print board6
+  print $ solve board6
+  print "=== 7 ==="
+  print board7
+  print $ solve board7
+  print "=== 8 ==="
+  print board8
+  print $ solve board8
+  print "=== 9 ==="
+  print board9
+  print $ solve board9
+  print "=== 10 ==="
+  print board10
+  print $ solve board10
+  print "=== 11 ==="
+  print board11
+  print $ solve board11
+  print "=== 12 ==="
+  print board12
+  print $ solve board12
+  print "=== 13 ==="
+  print board13
+  print $ solve board13
+  print "=== 14 ==="
+  print board14
+  print $ solve board14
+  print "=== 15 ==="
+  print board15
+  print $ solve board15
+  print "=== 16 ==="
+  print board16
+  print $ solve board16
+  print "=== 17 ==="
+  print board17
+  print $ solve board17
+  print "=== 18 ==="
+  print board18
+  print $ solve board18
+  print "=== 19 ==="
   print board19
   print $ solve board19

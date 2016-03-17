@@ -1,19 +1,23 @@
 module JellySquares.Solver
   ( solve
   , Move
+  , Solution
   ) where
 
 import Prelude
   ( (>>=)
+  , (<$>)
   , ($)
+  , (+)
   , (==)
   , (++)
   , class Show
   , show
   )
 import Data.Tuple (Tuple(..))
-import Data.List (List(Nil), (:), head, tail)
+import Data.List (List(..), (:), head, tail)
 import Data.Maybe (Maybe(..))
+import Data.Either (Either(..))
 import JellySquares
 
 import Debug.Trace
@@ -23,16 +27,52 @@ import Debug.Trace
 
 
 -- starting board and the move played on it
-data Move = Move GameBoard Int Int
+data Move = Move GameBoard Int Int (List Move)
+
+
+path :: Move -> List Move
+path move =
+  let
+    previousMoves (Move _ _ _ x) = x
+  in
+    move : previousMoves move
+
+
+perform :: Move -> Maybe (Tuple GameBoard (List Move))
+perform move =
+  let
+    doMove (Move gameBoard row col _) =
+      JellySquares.move
+        --(trace ("move " ++ (show row) ++ " col " ++ (show col)) \_ -> row)
+        row
+        col
+        gameBoard
+  in
+    (\nextBoard -> Tuple nextBoard (path move)) <$> doMove move
+
 
 instance moveShow :: Show Move where
-  show (Move board row col) =
+  show (Move board row col _) =
     case jellyAt row col board of
       Nothing -> ":("
       Just tile -> show tile
 
 
-data Solution = Solution (List Move) GameBoard
+newtype Solution = Solution (List Move)
+
+
+showMoves :: List Move -> String
+showMoves moves =
+  let
+    recShow Nil str = str
+    recShow (Cons x xs) str =
+      recShow xs $ " -> " ++ show x ++ str
+  in
+    recShow moves ""
+
+
+instance showSolution :: Show Solution where
+  show (Solution moves) = showMoves moves
 
 
 seenBefore :: GameBoard -> List Move -> Boolean
@@ -43,7 +83,7 @@ seenBefore gameBoard moves =
         Nothing ->
           false
 
-        Just (Move moveGameBoard _ _) ->
+        Just (Move moveGameBoard _ _ _) ->
           if gameBoard == moveGameBoard then
             true
           else
@@ -55,42 +95,97 @@ seenBefore gameBoard moves =
     recSeenBefore moves
 
 
-recSolve :: GameBoard -> List Move -> Maybe (List Move)
-recSolve currentBoard movesSoFar =
+findPossibleNextMoves :: Move -> List Move
+findPossibleNextMoves moveToDo =
+  case perform moveToDo of
+    Nothing -> Nil
+
+    Just (Tuple nextBoard movePath) ->
+      if seenBefore nextBoard movePath then
+        --trace ("CYCLE!! (skipping)") \_ ->
+        Nil
+      else
+        findMovesOnBoard movePath nextBoard
+
+
+findMovesOnBoard :: List Move -> GameBoard -> List Move
+findMovesOnBoard pathIn currentBoard =
+  let
+    createMove (Tuple row col) =
+      Move currentBoard row col pathIn
+  in
+    createMove <$> possibleMoves currentBoard
+
+
+processMoves :: List Move -> List Move -> Either (List Move) Solution
+processMoves Nil queue = Left queue
+processMoves (Cons currentMove otherMovesToTry) queue =
+  case perform currentMove of
+    Nothing ->
+      processMoves otherMovesToTry queue
+
+    Just (Tuple resultingBoard movePath) ->
+      if isComplete resultingBoard then
+        Right (Solution movePath)
+      else if seenBefore resultingBoard movePath then
+        --trace ("CYCLE!! (skipping)") \_ ->
+        processMoves otherMovesToTry queue
+      else
+        let
+          movesToQueue =
+            findMovesOnBoard
+              --trace (showMoves movePath) \_ ->
+              movePath
+              resultingBoard
+        in
+          processMoves otherMovesToTry (movesToQueue ++ queue)
+
+
+recSolveDepthFirst :: GameBoard -> List Move -> Int -> Maybe (List Move)
+recSolveDepthFirst currentBoard movesSoFar depth =
   if isComplete (trace "===recSolve===" \_->(traceShow currentBoard (\_ -> currentBoard))) then
     Just movesSoFar
   else
     let
-      recTryPossibles movesLeftToTry =
+      recTryPossibles count movesLeftToTry =
         case head movesLeftToTry of
           Nothing ->
-            (trace ("dead end:\n" ++ show currentBoard) \_ -> Nothing)
+            (trace ("dead end! " ++ show depth ++ " " ++ show count) \_ -> Nothing)
 
           Just (Tuple row col) ->
-            case move (trace ("move: row " ++ (show row) ++ " col " ++ (show col)) \_ -> row) col currentBoard of
+            case move (trace ("move at " ++ show depth ++ " " ++ show count ++ ": row " ++ (show row) ++ " col " ++ (show col)) \_ -> row) col currentBoard of
               Nothing ->
-                (tail movesLeftToTry) >>= recTryPossibles
+                (tail movesLeftToTry) >>= recTryPossibles (count + 1)
 
               Just nextBoard ->
                 if seenBefore nextBoard movesSoFar then
-                  (tail movesLeftToTry) >>= recTryPossibles
+                  trace ("CYCLE!! (skipping) " ++ show depth ++ " " ++ show count) \_ ->
+                  (tail movesLeftToTry) >>= recTryPossibles (count + 1)
                 else
-                  case recSolve nextBoard (Move currentBoard row col : movesSoFar) of
+                  case recSolveDepthFirst nextBoard (Move currentBoard row col movesSoFar : movesSoFar) (depth + 1) of
                     Just solution ->
                       Just solution
                     Nothing ->
-                      (tail movesLeftToTry) >>= recTryPossibles
+                      (tail movesLeftToTry) >>= recTryPossibles (count + 1)
     in
-      recTryPossibles $ possibleMoves currentBoard
+      recTryPossibles 0 $ possibleMoves currentBoard
 
 
-solve :: GameBoard -> Maybe (List Move)
+solve :: GameBoard -> Maybe Solution
 solve gameBoard =
-  -- TODO: try every possible board until:
-  -- 1. the jellies are in their goals
-  -- 2. no future boards are left
-  -- 3. a previous board has been reached
-  recSolve gameBoard Nil
+  let
+    recSolveBreadthFirst moves =
+      case processMoves moves Nil of
+        Left Nil -> Nothing
+        Left queue -> recSolveBreadthFirst queue
+        Right solution -> Just solution
+  in
+    recSolveBreadthFirst $ findMovesOnBoard Nil gameBoard
+    -- TODO: try every possible board until:
+    -- 1. the jellies are in their goals
+    -- 2. no future boards are left
+    -- 3. a previous board has been reached
+    -- recSolveDepthFirst gameBoard Nil 0
 
 
 

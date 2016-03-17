@@ -26,7 +26,6 @@ import Prelude
   , mod
   , (==)
   , (<)
-  , (>)
   , (>=)
   , (&&)
   , (>>=)
@@ -37,7 +36,7 @@ import Prelude
   , show
   )
 import Data.Maybe (Maybe(Nothing, Just))
-import Data.Array ((!!), updateAt, zipWith, length, snoc)
+import Data.Array ((!!), updateAt, zipWith, snoc)
 import Data.Foldable (class Foldable, and, foldl, foldr)
 import Data.Tuple
 import Data.List (List(Nil), (:))
@@ -397,25 +396,12 @@ hasMoves gameBoard =
 
 
 possibleMoves :: GameBoard -> List (Tuple Int Int)
-possibleMoves (Rectangle ncols tiles) =
+possibleMoves gameBoard =
   let
-    nrows = (length tiles) / ncols
-
-    isMovePossible row col direction =
-      case direction of
-        Up -> row > 0
-        Right -> col < ncols - 1
-        Down -> row < nrows - 1
-        Left -> col > 0
-
-    addPossibleMove (Positioned row col (Occupied tileType (Jelly jellyColor direction))) moves =
-
-      if isMovePossible row col direction then
+    addPossibleMove (Positioned row col _) moves =
+      if canMove row col gameBoard then
         Tuple row col : moves
       else
         moves
-
-    addPossibleMove _ moves =
-      moves
   in
-    foldr addPossibleMove Nil tiles
+    foldr addPossibleMove Nil gameBoard
