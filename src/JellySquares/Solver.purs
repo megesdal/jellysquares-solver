@@ -25,6 +25,14 @@ import JellySquares
   , isComplete
   , move
   )
+import BinomialHeap
+import Heap (empty)
+
+
+-- TODO: need to impl Ord for Move...
+pqueue :: BinomialHeap Int
+pqueue = empty
+
 
 import Debug.Trace
   ( trace
