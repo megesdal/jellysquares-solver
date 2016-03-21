@@ -543,7 +543,7 @@ board44 =
 
 main :: forall eff. Eff ( console :: CONSOLE | eff ) Unit
 main = do
-  print "=== 1 ==="
+  {-print "=== 1 ==="
   print board1
   print $ solve board1
   print "=== 2 ==="
@@ -596,7 +596,8 @@ main = do
   print $ solve board17
   print "=== 18 ==="
   print board18
-  print $ solve board18
+  print $ solve board18-}
   print "=== 19 ==="
   print board19
+  print $ distanceFromSolution board19
   print $ solve board19

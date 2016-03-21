@@ -3,6 +3,7 @@ module Heap
   , empty
   , isEmpty
   , insert
+  , insertList
   , merge
   , findMin
   , deleteMin
@@ -10,7 +11,11 @@ module Heap
 
 
 import Prelude (class Ord)
-import Data.Maybe
+import Data.Maybe (Maybe)
+import Data.Tuple (Tuple)
+
+-- needed for insertList
+import Data.List (List(..))
 
 
 class Heap h where
@@ -21,4 +26,9 @@ class Heap h where
   merge     :: forall a. Ord a => h a -> h a -> h a
 
   findMin   :: forall a. Ord a => h a -> Maybe a
-  deleteMin :: forall a. Ord a => h a -> Maybe (h a)
+  deleteMin :: forall a. Ord a => h a -> Maybe (Tuple a (h a))
+
+
+insertList :: forall a h. (Ord a, Heap h) => List a -> h a -> h a
+insertList Nil heap = heap
+insertList (Cons a as) heap = insertList as (insert a heap)

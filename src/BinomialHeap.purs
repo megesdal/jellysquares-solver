@@ -78,7 +78,7 @@ instance binomialHeap :: Heap BinomialHeap where
   findMin (BH ts) = removeMinTree ts <#> fst <#> root
   deleteMin (BH ts) =
     let
-      addBackChildren (Tuple (Node _ _ ts1) ts2) =
-        BH (mrg (reverse ts1) ts2)
+      addBackChildren (Tuple (Node _ x ts1) ts2) =
+        Tuple x (BH (mrg (reverse ts1) ts2))
     in
       removeMinTree ts <#> addBackChildren
