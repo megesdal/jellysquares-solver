@@ -596,8 +596,13 @@ main = do
   print $ solve board17
   print "=== 18 ==="
   print board18
-  print $ solve board18-}
+  print $ solve board18
   print "=== 19 ==="
   print board19
   print $ distanceFromSolution board19
-  print $ solve board19
+  print $ solve board19-}
+
+  print "=== 44 ==="
+  print board44
+  print $ distanceFromSolution board44
+  print $ solve board44
